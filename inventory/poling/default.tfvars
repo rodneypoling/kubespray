@@ -27,11 +27,11 @@ machines = {
   }
 }
 
-gateway = "i-did-not-read-the-docs" # e.g. 192.168.0.1
+gateway = "10.0.51.1" # e.g. 192.168.0.1
 
 ssh_public_keys = [
   # Put your public SSH key here
-  "ssh-rsa I-did-not-read-the-docs",
+  "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjEAAAAIbmlzdHA1MjEAAACFBAHuZ+lFvjFYMKrcPyWLOw9G09W0Etze6+f6vM164abVlatm0CGiaV/Y1f1t2mmQQH6xKl2K5Vx0yHjSfdNBd2o4yQA6se59RrwAtLNUAeFhSj7ideQEGQ1fuHXi107q5/VJc/1XPJ6o1qVD1uvAWOATwECOqP2qOuVLUlSQ9EDwbUHFuw== rodney@k8spray.poling.local",
 ]
 
 vsphere_datacenter      = "Home"
@@ -39,7 +39,7 @@ vsphere_compute_cluster = "cluster01" # e.g. Cluster
 vsphere_datastore       = "vmw-nfs" # e.g. ssd-000000
 vsphere_server          = "vcenter.home.local" # e.g. vsphere.server.com
 
-template_name = "i-did-not-read-the-docs" # e.g. ubuntu-bionic-18.04-cloudimg
+template_name = "templates/ubuntu/packer-ubuntu-20.04" # e.g. ubuntu-bionic-18.04-cloudimg
 
 vsphere_user = "administrator@home.local"
 vsphere_password = "Yobiesa01!"
