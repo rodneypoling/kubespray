@@ -1,8 +1,13 @@
 prefix = "k8s"
 
+folder = "k8s"
+
 inventory_file = "inventory.ini"
 
 network = "kubespray"
+
+dns_primary = "10.0.20.72"
+dns_secondary = "10.0.100.42"
 
 machines = {
   "master-0" : {
@@ -35,3 +40,6 @@ vsphere_datastore       = "vmw-nfs" # e.g. ssd-000000
 vsphere_server          = "vcenter.home.local" # e.g. vsphere.server.com
 
 template_name = "i-did-not-read-the-docs" # e.g. ubuntu-bionic-18.04-cloudimg
+
+vsphere_user = "administrator@home.local"
+vsphere_password = "Yobiesa01!"

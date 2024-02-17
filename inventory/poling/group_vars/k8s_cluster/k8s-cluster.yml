@@ -157,7 +157,7 @@ kube_encrypt_secret_data: false
 
 # DNS configuration.
 # Kubernetes cluster name, also will be used as DNS domain
-cluster_name: cluster.local
+cluster_name: k8s.rodney.local
 # Subdomains of DNS domain to be resolved via /etc/resolv.conf for hostnet pods
 ndots: 2
 # dns_timeout: 2
@@ -244,7 +244,7 @@ kubernetes_audit: false
 default_kubelet_config_dir: "{{ kube_config_dir }}/dynamic_kubelet_dir"
 
 # Make a copy of kubeconfig on the host that runs Ansible in {{ inventory_dir }}/artifacts
-# kubeconfig_localhost: false
+kubeconfig_localhost: true
 # Use ansible_host as external api ip when copying over kubeconfig.
 # kubeconfig_localhost_ansible_host: false
 # Download kubectl onto the host that runs Ansible in {{ bin_dir }}
