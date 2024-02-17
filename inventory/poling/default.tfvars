@@ -37,7 +37,7 @@ ssh_public_keys = [
 vsphere_datacenter      = "Home"
 vsphere_compute_cluster = "cluster01" # e.g. Cluster
 vsphere_datastore       = "vmw-nfs" # e.g. ssd-000000
-vsphere_server          = "vcenter.home.local" # e.g. vsphere.server.com
+vsphere_server          = "vcenter.poling.local" # e.g. vsphere.server.com
 
 template_name = "templates/ubuntu/packer-ubuntu-20.04" # e.g. ubuntu-bionic-18.04-cloudimg
 
