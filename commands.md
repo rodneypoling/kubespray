@@ -1,4 +1,4 @@
-###Commands needed to build K8s Cluster
+#*Commands needed to build K8s Cluster
 
 ##Terraform Infra Build
 
