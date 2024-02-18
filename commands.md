@@ -17,9 +17,11 @@ terraform -chdir=contrib/terraform/vsphere destroy -var-file ~/kubespray/invento
 #SSH Key Copy
 
   ssh-copy-id rodney@10.0.51.150
+  
   ssh-copy-id rodney@10.0.51.160
+  
   ssh-copy-id rodney@10.0.51.161
-
+  
 #Install Cluster
 
   ansible-playbook -i inventory/poling/hosts.yaml --become --become-user=root cluster.yml
