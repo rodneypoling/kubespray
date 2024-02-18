@@ -11,7 +11,8 @@ terraform -chdir=contrib/terraform/vsphere destroy -var-file ~/kubespray/invento
 #Ansible - K8 Cluster Build
 
 Connect to the hosts
-  ansible -i inventory/poling/hosts.yaml -m ping all
+
+$  ansible -i inventory/poling/hosts.yaml -m ping all
 
 SSH Key Copy
 
