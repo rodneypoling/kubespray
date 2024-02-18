@@ -2,11 +2,11 @@
 
 - Terraform Infra Build
 
-terraform -chdir=contrib/terraform/vsphere apply -var-file ~/kubespray/inventory/poling/default.tfvars
+  terraform -chdir=contrib/terraform/vsphere apply -var-file ~/kubespray/inventory/poling/default.tfvars
 
 - Terraform Infra Destroy
 
-terraform -chdir=contrib/terraform/vsphere destroy -var-file ~/kubespray/inventory/poling/default.tfvars
+  terraform -chdir=contrib/terraform/vsphere destroy -var-file ~/kubespray/inventory/poling/default.tfvars
 
 #Ansible - K8 Cluster Build
 
