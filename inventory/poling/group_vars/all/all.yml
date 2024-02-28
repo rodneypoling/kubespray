@@ -7,20 +7,20 @@ bin_dir: /usr/local/bin
 ## this node for example.  The access_ip is really useful AWS and Google
 ## environments where the nodes are accessed remotely by the "public" ip,
 ## but don't know about that address themselves.
-# access_ip: 1.1.1.1
+#access_ip: 1.1.1.1
 
 
 ## External LB example config
-## apiserver_loadbalancer_domain_name: "elb.some.domain"
-# loadbalancer_apiserver:
-#   address: 1.2.3.4
-#   port: 1234
+apiserver_loadbalancer_domain_name: "10.0.51.100"
+loadbalancer_apiserver:
+  address: "10.0.51.100"
+  port: 6443
 
 ## Internal loadbalancers for apiservers
-# loadbalancer_apiserver_localhost: true
+#loadbalancer_apiserver_localhost: true
+
 # valid options are "nginx" or "haproxy"
 # loadbalancer_apiserver_type: nginx  # valid values "nginx" or "haproxy"
-
 ## Local loadbalancer should use this port
 ## And must be set port 6443
 loadbalancer_apiserver_port: 6443
@@ -83,20 +83,20 @@ no_proxy_exclude_workers: false
 ## This setting determines whether certs are generated via scripts.
 ## Chose 'none' if you provide your own certificates.
 ## Option is  "script", "none"
-# cert_management: script
+#cert_management: script
 
 ## Set to true to allow pre-checks to fail and continue deployment
-# ignore_assert_errors: false
+#ignore_assert_errors: false
 
 ## The read-only port for the Kubelet to serve on with no authentication/authorization. Uncomment to enable.
-# kube_read_only_port: 10255
+#kube_read_only_port: 10255
 
 ## Set true to download and cache container
-# download_container: true
+#download_container: true
 
 ## Deploy container engine
 # Set false if you want to deploy container engine manually.
-# deploy_container_engine: true
+#deploy_container_engine: true
 
 ## Red Hat Enterprise Linux subscription registration
 ## Add either RHEL subscription Username/Password or Organization ID/Activation Key combination
