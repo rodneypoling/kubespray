@@ -45,7 +45,7 @@ vsphere_user = "administrator@home.local"
 vsphere_password = "Yobiesa01!"
 
 #===============================================================================
-# Global virtual machines parameters
+# Global virtual machines parameters - haproxy
 #===============================================================================
 
 # Username used to SSH to the virtual machines #
