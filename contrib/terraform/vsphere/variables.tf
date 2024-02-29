@@ -99,3 +99,25 @@ variable "worker_memory" {
 variable "worker_disk_size" {
   default = "80"
 }
+
+#### Vars added by rodney ####
+variable "vsphere_resource_pool" {
+  description = "vSphere resource pool"
+}
+
+variable "vm_haproxy_vip" {
+  description = "IP used for the HAProxy floating VIP"
+}
+
+variable "vm_haproxy_ips" {
+  type        = map(string)
+  description = "IP used for two HAProxy virtual machine"
+}
+
+variable "vm_haproxy_cpu" {
+  description = "Number of vCPU for the HAProxy virtual machine"
+}
+
+variable "vm_haproxy_ram" {
+  description = "Amount of RAM for the HAProxy virtual machine (example: 1024)"
+}

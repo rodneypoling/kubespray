@@ -43,3 +43,40 @@ template_name = "templates/ubuntu/packer-ubuntu-20.04" # e.g. ubuntu-bionic-18.0
 
 vsphere_user = "administrator@home.local"
 vsphere_password = "Yobiesa01!"
+
+#===============================================================================
+# Global virtual machines parameters
+#===============================================================================
+
+# Username used to SSH to the virtual machines #
+vm_user = "rodney"
+vm_password = "Yobiesa01"
+vm_privilege_password = "Yobiesa01"
+
+# The name of the vSphere virtual machine and template folder that will be created to store the virtual machines #
+vm_folder = "k8s-kubespray"
+
+# The domain name used by the virtual machines #
+vm_domain = "poling.local"
+
+# vSphere resource pool name that will be created to deploy the virtual machines #
+vsphere_resource_pool = "k8s-kubespray"
+
+#===============================================================================
+# HAProxy load balancer virtual machine parameters
+#===============================================================================
+
+# The number of vCPU allocated to the load balancer virtual machine #
+vm_haproxy_cpu = "1"
+
+# The amount of RAM allocated to the load balancer virtual machine #
+vm_haproxy_ram = "2048"
+
+# The IP address of the load balancer floating VIP #
+vm_haproxy_vip = "10.0.51.100"
+
+# The IP address of the load balancer virtual machine #
+vm_haproxy_ips = {
+  "0" = "10.0.51.101"
+  "1" = "10.0.51.102"
+}

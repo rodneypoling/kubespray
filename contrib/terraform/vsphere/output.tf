@@ -29,3 +29,13 @@ output "vsphere_folder" {
 output "vsphere_pool" {
   value = "${terraform.workspace}-cluster-pool"
 }
+
+#-------------------------#
+
+output "vm_haproxy_vip" {
+  value = "var.vm_haproxy_vip"
+}
+
+output "vm_haproxy_ips" {
+  value = "var.vm_haproxy_ips"
+}
