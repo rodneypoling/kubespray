@@ -98,3 +98,153 @@ resource "local_file" "inventory" {
   })
   filename = var.inventory_file
 }
+
+### HA Proxy Adds ###
+
+# HAProxy hostname and ip list template #
+data "template_file" "haproxy_hosts" {
+  count    = "${length(var.vm_haproxy_ips)}"
+  template = "${file("../../../inventory/poling/templates/ansible_hosts.tpl")}"
+
+  vars = {
+    hostname = "${var.vm_name_prefix}-haproxy-${count.index}"
+    host_ip  = "${lookup(var.vm_haproxy_ips, count.index)}"
+  }
+}
+
+# HAProxy hostname list template #
+data "template_file" "haproxy_hosts_list" {
+  count    = "${length(var.vm_haproxy_ips)}"
+  template = "${file("../../../inventory/poling/templates/ansible_hosts_list.tpl")}"
+
+  vars = {
+    hostname = "${var.vm_name_prefix}-haproxy-${count.index}"
+  }
+}
+
+# HAProxy template #
+data "template_file" "haproxy" {
+  template = "${file("../../../inventory/poling/templates/haproxy.tpl")}"
+
+  vars = {
+    bind_ip = "${var.vm_haproxy_vip}"
+  }
+}
+
+# HAProxy server backend template #
+data "template_file" "haproxy_backend" {
+  count    = "${length(var.vm_master_ips)}"
+  template = "${file("../../../inventory/poling/templates/haproxy_backend.tpl")}"
+
+  vars = {
+    prefix_server     = "${var.vm_name_prefix}"
+    backend_server_ip = "${lookup(var.vm_master_ips, count.index)}"
+    count             = "${count.index}"
+  }
+}
+
+# Keepalived master template #
+data "template_file" "keepalived_master" {
+  template = "${file("../../../inventory/poling/templates/keepalived_master.tpl")}"
+
+  vars = {
+    virtual_ip = "${var.vm_haproxy_vip}"
+  }
+}
+
+# Keepalived slave template #
+data "template_file" "keepalived_slave" {
+  template = "${file("../../../inventory/poling/templates/keepalived_slave.tpl")}"
+
+  vars = {
+    virtual_ip = "${var.vm_haproxy_vip}"
+  }
+}
+
+# Create HAProxy configuration from Terraform templates #
+resource "local_file" "haproxy" {
+  content  = "${data.template_file.haproxy.rendered}${join("", data.template_file.haproxy_backend.*.rendered)}"
+  filename = "config/haproxy.cfg"
+}
+
+# Create Keepalived master configuration from Terraform templates #
+resource "local_file" "keepalived_master" {
+  content  = "${data.template_file.keepalived_master.rendered}"
+  filename = "config/keepalived-master.cfg"
+}
+
+# Create Keepalived slave configuration from Terraform templates #
+resource "local_file" "keepalived_slave" {
+  content  = "${data.template_file.keepalived_slave.rendered}"
+  filename = "config/keepalived-slave.cfg"
+}
+
+# Execute HAProxy Ansible playbook #
+resource "null_resource" "haproxy_install" {
+  count = "${var.action == "create" ? 1 : 0}"
+
+  provisioner "local-exec" {
+    command = "cd ansible/haproxy && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e \"ansible_ssh_pass=$VM_PASSWORD ansible_become_pass=$VM_PRIVILEGE_PASSWORD\" ${lookup(local.extra_args, var.vm_distro)} -v haproxy.yml"
+
+    environment = {
+      VM_PASSWORD           = "${var.vm_password}"
+      VM_PRIVILEGE_PASSWORD = "${var.vm_privilege_password}"
+    }
+  }
+
+  depends_on = [local_file.kubespray_hosts, local_file.haproxy, null_resource.rhel_register, null_resource.rhel_firewalld, vsphere_virtual_machine.haproxy]
+}
+
+# Create a virtual machine folder for the Kubernetes VMs #
+resource "vsphere_folder" "folder" {
+  path          = "${var.vm_folder}"
+  type          = "vm"
+  datacenter_id = "${data.vsphere_datacenter.dc.id}"
+}
+
+# Create the HAProxy load balancer VM #
+resource "vsphere_virtual_machine" "haproxy" {
+  count            = "${length(var.vm_haproxy_ips)}"
+  name             = "${var.vm_name_prefix}-haproxy-${count.index}"
+  resource_pool_id = "${vsphere_resource_pool.resource_pool.id}"
+  datastore_id     = "${data.vsphere_datastore.datastore.id}"
+  folder           = "${vsphere_folder.folder.path}"
+
+  num_cpus = "${var.vm_haproxy_cpu}"
+  memory   = "${var.vm_haproxy_ram}"
+  guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
+
+  network_interface {
+    network_id   = "${data.vsphere_network.network.id}"
+    adapter_type = "${data.vsphere_virtual_machine.template.network_interface_types[0]}"
+  }
+
+  disk {
+    label            = "${var.vm_name_prefix}-haproxy-${count.index}.vmdk"
+    size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
+    eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
+    thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
+  }
+
+  clone {
+    template_uuid = "${data.vsphere_virtual_machine.template.id}"
+    linked_clone  = "${var.vm_linked_clone}"
+
+    customize {
+      timeout = "20"
+
+      linux_options {
+        host_name = "${var.vm_name_prefix}-haproxy-${count.index}"
+        domain    = "${var.vm_domain}"
+      }
+
+      network_interface {
+        ipv4_address = "${lookup(var.vm_haproxy_ips, count.index)}"
+        ipv4_netmask = "${var.vm_netmask}"
+      }
+
+      ipv4_gateway    = "${var.vm_gateway}"
+      dns_server_list = ["${var.vm_dns}"]
+    }
+  }
+}
