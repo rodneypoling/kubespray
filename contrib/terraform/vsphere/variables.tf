@@ -99,8 +99,9 @@ variable "worker_memory" {
 variable "worker_disk_size" {
   default = "80"
 }
-
+##############################
 #### Vars added by rodney ####
+##############################
 variable "vsphere_resource_pool" {
   description = "vSphere resource pool"
 }
@@ -120,4 +121,34 @@ variable "vm_haproxy_cpu" {
 
 variable "vm_haproxy_ram" {
   description = "Amount of RAM for the HAProxy virtual machine (example: 1024)"
+}
+
+variable "vm_user" {
+  description = "vm user name"
+}
+
+variable "vm_password" {
+  description = "password"
+}
+
+variable "vm_privilege_password" {
+  description = "priv passwoord"
+}
+
+variable "vm_domain" {
+  description = "domain"
+}
+
+variable "vm_netmask" {
+  description = "netmask"
+}
+
+variable "action" {
+  description = "Which action have to be done on the cluster (create, add_worker, remove_worker, or upgrade)"
+  default     = "create"
+}
+
+variable "vm_distro" {
+  description = "Linux distribution of the vSphere virtual machines (ubuntu/centos/debian/rhel)"
+  default     = "ubuntu"
 }

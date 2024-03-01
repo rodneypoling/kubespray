@@ -80,3 +80,7 @@ vm_haproxy_ips = {
   "0" = "10.0.51.101"
   "1" = "10.0.51.102"
 }
+
+# The netmask used to configure the network cards of the virtual machines (example: 24)#
+vm_netmask = "24"
+

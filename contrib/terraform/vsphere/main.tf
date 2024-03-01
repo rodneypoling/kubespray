@@ -98,8 +98,9 @@ resource "local_file" "inventory" {
   })
   filename = var.inventory_file
 }
-
+#####################
 ### HA Proxy Adds ###
+#####################
 
 # HAProxy hostname and ip list template #
 data "template_file" "haproxy_hosts" {
@@ -107,7 +108,7 @@ data "template_file" "haproxy_hosts" {
   template = "${file("../../../inventory/poling/templates/ansible_hosts.tpl")}"
 
   vars = {
-    hostname = "${var.vm_name_prefix}-haproxy-${count.index}"
+    hostname = "${var.prefix}-haproxy-${count.index}"
     host_ip  = "${lookup(var.vm_haproxy_ips, count.index)}"
   }
 }
@@ -118,7 +119,7 @@ data "template_file" "haproxy_hosts_list" {
   template = "${file("../../../inventory/poling/templates/ansible_hosts_list.tpl")}"
 
   vars = {
-    hostname = "${var.vm_name_prefix}-haproxy-${count.index}"
+    hostname = "${var.prefix}-haproxy-${count.index}"
   }
 }
 
@@ -133,12 +134,12 @@ data "template_file" "haproxy" {
 
 # HAProxy server backend template #
 data "template_file" "haproxy_backend" {
-  count    = "${length(var.vm_master_ips)}"
+  count    = "${length(module.kubernetes.master_ip)}"
   template = "${file("../../../inventory/poling/templates/haproxy_backend.tpl")}"
 
   vars = {
-    prefix_server     = "${var.vm_name_prefix}"
-    backend_server_ip = "${lookup(var.vm_master_ips, count.index)}"
+    prefix_server     = "${var.prefix}"
+    backend_server_ip = "${lookup(module.kubernetes.master_ip, count.index)}"
     count             = "${count.index}"
   }
 }
@@ -197,7 +198,7 @@ resource "null_resource" "haproxy_install" {
 
 # Create a virtual machine folder for the Kubernetes VMs #
 resource "vsphere_folder" "folder" {
-  path          = "${var.vm_folder}"
+  path          = "${var.folder}"
   type          = "vm"
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
@@ -205,7 +206,7 @@ resource "vsphere_folder" "folder" {
 # Create the HAProxy load balancer VM #
 resource "vsphere_virtual_machine" "haproxy" {
   count            = "${length(var.vm_haproxy_ips)}"
-  name             = "${var.vm_name_prefix}-haproxy-${count.index}"
+  name             = "${var.prefix}-haproxy-${count.index}"
   resource_pool_id = "${vsphere_resource_pool.resource_pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
   folder           = "${vsphere_folder.folder.path}"
@@ -220,7 +221,7 @@ resource "vsphere_virtual_machine" "haproxy" {
   }
 
   disk {
-    label            = "${var.vm_name_prefix}-haproxy-${count.index}.vmdk"
+    label            = "${var.prefix}-haproxy-${count.index}.vmdk"
     size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
@@ -228,13 +229,13 @@ resource "vsphere_virtual_machine" "haproxy" {
 
   clone {
     template_uuid = "${data.vsphere_virtual_machine.template.id}"
-    linked_clone  = "${var.vm_linked_clone}"
+    #linked_clone  = "${var.vm_linked_clone}" - Dont think I need this one.
 
     customize {
       timeout = "20"
 
       linux_options {
-        host_name = "${var.vm_name_prefix}-haproxy-${count.index}"
+        host_name = "${var.prefix}-haproxy-${count.index}"
         domain    = "${var.vm_domain}"
       }
 
@@ -243,8 +244,22 @@ resource "vsphere_virtual_machine" "haproxy" {
         ipv4_netmask = "${var.vm_netmask}"
       }
 
-      ipv4_gateway    = "${var.vm_gateway}"
-      dns_server_list = ["${var.vm_dns}"]
+      ipv4_gateway    = "${var.gateway}"
+      dns_server_list = ["${var.dns_primary}"]
     }
+  }
+}
+
+#===============================================================================
+# Locals
+#===============================================================================
+
+# Extra args for ansible playbooks #
+locals {
+  extra_args = {
+    ubuntu = "-T 300"
+    debian = "-T 300 -e 'ansible_become_method=su'"
+    centos = "-T 300"
+    rhel   = "-T 300"
   }
 }
