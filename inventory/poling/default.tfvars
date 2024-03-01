@@ -53,9 +53,6 @@ vm_user = "rodney"
 vm_password = "Yobiesa01"
 vm_privilege_password = "Yobiesa01"
 
-# The name of the vSphere virtual machine and template folder that will be created to store the virtual machines #
-vm_folder = "k8s-kubespray"
-
 # The domain name used by the virtual machines #
 vm_domain = "poling.local"
 

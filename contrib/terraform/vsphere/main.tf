@@ -105,7 +105,7 @@ resource "local_file" "inventory" {
 # HAProxy hostname and ip list template #
 data "template_file" "haproxy_hosts" {
   count    = "${length(var.vm_haproxy_ips)}"
-  template = "${file("../../../inventory/poling/templates/ansible_hosts.tpl")}"
+  template = "${file("~/kubespray/inventory/poling/templates/ansible_hosts.tpl")}"
 
   vars = {
     hostname = "${var.prefix}-haproxy-${count.index}"
@@ -116,7 +116,7 @@ data "template_file" "haproxy_hosts" {
 # HAProxy hostname list template #
 data "template_file" "haproxy_hosts_list" {
   count    = "${length(var.vm_haproxy_ips)}"
-  template = "${file("../../../inventory/poling/templates/ansible_hosts_list.tpl")}"
+  template = "${file("~/kubespray/inventory/poling/templates/ansible_hosts_list.tpl")}"
 
   vars = {
     hostname = "${var.prefix}-haproxy-${count.index}"
@@ -125,7 +125,7 @@ data "template_file" "haproxy_hosts_list" {
 
 # HAProxy template #
 data "template_file" "haproxy" {
-  template = "${file("../../../inventory/poling/templates/haproxy.tpl")}"
+  template = "${file("~/kubespray/inventory/poling/templates/haproxy.tpl")}"
 
   vars = {
     bind_ip = "${var.vm_haproxy_vip}"
@@ -135,7 +135,7 @@ data "template_file" "haproxy" {
 # HAProxy server backend template #
 data "template_file" "haproxy_backend" {
   count    = "${length(module.kubernetes.master_ip)}"
-  template = "${file("../../../inventory/poling/templates/haproxy_backend.tpl")}"
+  template = "${file("~/kubespray/inventory/poling/templates/haproxy_backend.tpl")}"
 
   vars = {
     prefix_server     = "${var.prefix}"
@@ -146,7 +146,7 @@ data "template_file" "haproxy_backend" {
 
 # Keepalived master template #
 data "template_file" "keepalived_master" {
-  template = "${file("../../../inventory/poling/templates/keepalived_master.tpl")}"
+  template = "${file("~/kubespray/inventory/poling/templates/keepalived_master.tpl")}"
 
   vars = {
     virtual_ip = "${var.vm_haproxy_vip}"
@@ -155,7 +155,7 @@ data "template_file" "keepalived_master" {
 
 # Keepalived slave template #
 data "template_file" "keepalived_slave" {
-  template = "${file("../../../inventory/poling/templates/keepalived_slave.tpl")}"
+  template = "${file("~/kubespray/inventory/poling/templates/keepalived_slave.tpl")}"
 
   vars = {
     virtual_ip = "${var.vm_haproxy_vip}"
