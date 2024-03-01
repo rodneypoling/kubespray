@@ -207,7 +207,7 @@ resource "vsphere_folder" "folder" {
 resource "vsphere_virtual_machine" "haproxy" {
   count            = "${length(var.vm_haproxy_ips)}"
   name             = "${var.prefix}-haproxy-${count.index}"
-  resource_pool_id = "${vsphere_resource_pool.resource_pool.id}"
+  resource_pool_id = "${vsphere_resource_pool.pool.id}"  #vsphere_resource_pool.pool.id
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
   folder           = "${vsphere_folder.folder.path}"
 
