@@ -162,24 +162,6 @@ data "template_file" "keepalived_slave" {
   }
 }
 
-# Create HAProxy configuration from Terraform templates #
-resource "local_file" "haproxy" {
-  content  = "${data.template_file.haproxy.rendered}${join("", data.template_file.haproxy_backend.*.rendered)}"
-  filename = "config/haproxy.cfg"
-}
-
-# Create Keepalived master configuration from Terraform templates #
-resource "local_file" "keepalived_master" {
-  content  = "${data.template_file.keepalived_master.rendered}"
-  filename = "config/keepalived-master.cfg"
-}
-
-# Create Keepalived slave configuration from Terraform templates #
-resource "local_file" "keepalived_slave" {
-  content  = "${data.template_file.keepalived_slave.rendered}"
-  filename = "config/keepalived-slave.cfg"
-}
-
 # Execute HAProxy Ansible playbook #
 resource "null_resource" "haproxy_install" {
   count = "${var.action == "create" ? 1 : 0}"
