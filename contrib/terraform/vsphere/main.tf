@@ -175,7 +175,7 @@ resource "null_resource" "haproxy_install" {
     }
   }
 
-  depends_on = [local_file.kubespray_hosts, local_file.haproxy, null_resource.rhel_register, null_resource.rhel_firewalld, vsphere_virtual_machine.haproxy]
+  depends_on = [local_file.haproxy, vsphere_virtual_machine.haproxy]
 }
 
 # Create a virtual machine folder for the Kubernetes VMs #
