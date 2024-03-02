@@ -139,7 +139,7 @@ data "template_file" "haproxy_backend" {
 
   vars = {
     prefix_server     = "${var.prefix}"
-    backend_server_ip = "${lookup(module.kubernetes.master_ip)}"
+    backend_server_ip = "${values(module.kubernetes.master_ip)}"
     count             = "${count.index}"
   }
 }
