@@ -4,6 +4,8 @@
 
     terraform -chdir=contrib/terraform/vsphere/ init
 
+    terraform -chdir=contrib/terraform/vsphere plan -var-file ~/kubespray/inventory/poling/default.tfvars
+
     terraform -chdir=contrib/terraform/vsphere apply -var-file ~/kubespray/inventory/poling/default.tfvars
 
 - Terraform Infra Destroy
