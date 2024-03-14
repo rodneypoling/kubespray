@@ -1,6 +1,6 @@
 #Commands needed to build K8s Cluster
 
-- Terraform Infra Build
+- Terraform Infra Build - run from the ~/kubespray$ folder
 
     terraform -chdir=contrib/terraform/vsphere/ init
 
