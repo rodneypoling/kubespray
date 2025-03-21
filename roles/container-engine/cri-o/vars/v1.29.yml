@@ -1,8 +1,13 @@
 ---
+crio_conmon: "{{ bin_dir }}/crio-conmon"
+crio_runtime_bin_dir: "{{ bin_dir }}"
+
 # cri-o binary files
 crio_bin_files:
-  - conmon
-  - conmonrs
+  - crio-conmon
+  - crio-conmonrs
+  - crio-crun
+  - crio-runc
   - crio
   - pinns
 

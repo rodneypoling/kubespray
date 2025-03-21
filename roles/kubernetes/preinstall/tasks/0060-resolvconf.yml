@@ -7,19 +7,18 @@
   blockinfile:
     path: "{{ resolvconffile }}"
     block: |-
-      {% for item in [domainentry] + [searchentries] -%}
-      {{ item }}
-      {% endfor %}
-      {% for item in nameserverentries.split(',') %}
+      domain {{ dns_domain }}
+      search {{ (default_searchdomains + searchdomains) | join(' ') }}
+      {% for item in nameserverentries %}
       nameserver {{ item }}
       {% endfor %}
       options ndots:{{ ndots }} timeout:{{ dns_timeout | default('2') }} attempts:{{ dns_attempts | default('2') }}
     state: present
     insertbefore: BOF
-    create: yes
+    create: true
     backup: "{{ not resolvconf_stat.stat.islnk }}"
     marker: "# Ansible entries {mark}"
-    mode: 0644
+    mode: "0644"
   notify: Preinstall | propagate resolvconf to k8s components
 
 - name: Remove search/domain/nameserver options before block
@@ -53,6 +52,6 @@
     dest: "{{ resolveconf_cloud_init_conf }}"
     src: resolvconf.j2
     owner: root
-    mode: 0644
+    mode: "0644"
   notify: Preinstall | update resolvconf for Flatcar Container Linux by Kinvolk
   when: ansible_os_family in ["Flatcar", "Flatcar Container Linux by Kinvolk"]

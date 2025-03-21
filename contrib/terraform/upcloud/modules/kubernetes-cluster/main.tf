@@ -20,6 +20,36 @@ locals {
     ]
   ])
 
+  gateway_connections = flatten([
+    for gateway_name, gateway in var.gateways : [
+      for connection_name, connection in gateway.connections : {
+          "gateway_id" = upcloud_gateway.gateway[gateway_name].id
+          "gateway_name" = gateway_name
+          "connection_name" = connection_name
+          "type" = connection.type
+          "local_routes" = connection.local_routes
+          "remote_routes" = connection.remote_routes
+      }
+    ]
+  ])
+
+  gateway_connection_tunnels = flatten([
+    for gateway_name, gateway in var.gateways : [
+      for connection_name, connection in gateway.connections : [
+        for tunnel_name, tunnel in connection.tunnels : {
+          "gateway_id" = upcloud_gateway.gateway[gateway_name].id
+          "gateway_name" = gateway_name
+          "connection_id" = upcloud_gateway_connection.gateway_connection["${gateway_name}-${connection_name}"].id
+          "connection_name" = connection_name
+          "tunnel_name" = tunnel_name
+          "local_address_name" = tolist(upcloud_gateway.gateway[gateway_name].address).0.name
+          "remote_address" = tunnel.remote_address
+          "ipsec_properties" = tunnel.ipsec_properties
+        }
+      ]
+    ]
+  ])
+
   # If prefix is set, all resources will be prefixed with "${var.prefix}-"
   # Else don't prefix with anything
   resource-prefix = "%{if var.prefix != ""}${var.prefix}-%{endif}"
@@ -30,10 +60,13 @@ resource "upcloud_network" "private" {
   zone = var.zone
 
   ip_network {
-    address = var.private_network_cidr
-    dhcp    = true
-    family  = "IPv4"
+    address            = var.private_network_cidr
+    dhcp_default_route = var.router_enable
+    dhcp               = true
+    family             = "IPv4"
   }
+
+  router = var.router_enable ? upcloud_router.router[0].id : null
 }
 
 resource "upcloud_storage" "additional_disks" {
@@ -54,11 +87,12 @@ resource "upcloud_server" "master" {
     if machine.node_type == "master"
   }
 
-  hostname = "${local.resource-prefix}${each.key}"
-  plan     = each.value.plan
-  cpu      = each.value.plan == null ? each.value.cpu : null
-  mem      = each.value.plan == null ? each.value.mem : null
-  zone     = var.zone
+  hostname     = "${local.resource-prefix}${each.key}"
+  plan         = each.value.plan
+  cpu          = each.value.plan == null ? null : each.value.cpu
+  mem          = each.value.plan == null ? null : each.value.mem
+  zone         = var.zone
+  server_group = each.value.server_group == null ? null : upcloud_server_group.server_groups[each.value.server_group].id
 
   template {
     storage = var.template_name
@@ -111,11 +145,13 @@ resource "upcloud_server" "worker" {
     if machine.node_type == "worker"
   }
 
-  hostname = "${local.resource-prefix}${each.key}"
-  plan     = each.value.plan
-  cpu      = each.value.plan == null ? each.value.cpu : null
-  mem      = each.value.plan == null ? each.value.mem : null
-  zone     = var.zone
+  hostname     = "${local.resource-prefix}${each.key}"
+  plan         = each.value.plan
+  cpu          = each.value.plan == null ? null : each.value.cpu
+  mem          = each.value.plan == null ? null : each.value.mem
+  zone         = var.zone
+  server_group = each.value.server_group == null ? null : upcloud_server_group.server_groups[each.value.server_group].id
+
 
   template {
     storage = var.template_name
@@ -512,8 +548,33 @@ resource "upcloud_loadbalancer" "lb" {
   configured_status = "started"
   name              = "${local.resource-prefix}lb"
   plan              = var.loadbalancer_plan
-  zone              = var.zone
-  network           = upcloud_network.private.id
+  zone              = var.private_cloud ? var.public_zone : var.zone
+  network           = var.loadbalancer_legacy_network ? upcloud_network.private.id : null
+
+  dynamic "networks" {
+    for_each = var.loadbalancer_legacy_network ? [] : [1]
+
+    content {
+      name    = "Private-Net"
+      type    = "private"
+      family  = "IPv4"
+      network = upcloud_network.private.id
+    }
+  }
+
+  dynamic "networks" {
+    for_each = var.loadbalancer_legacy_network ? [] : [1]
+
+    content {
+      name   = "Public-Net"
+      type   = "public"
+      family = "IPv4"
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [ maintenance_dow, maintenance_time ]
+  }
 }
 
 resource "upcloud_loadbalancer_backend" "lb_backend" {
@@ -521,6 +582,9 @@ resource "upcloud_loadbalancer_backend" "lb_backend" {
 
   loadbalancer = upcloud_loadbalancer.lb[0].id
   name         = "lb-backend-${each.key}"
+  properties {
+    outbound_proxy_protocol = var.loadbalancer_outbound_proxy_protocol
+  }
 }
 
 resource "upcloud_loadbalancer_frontend" "lb_frontend" {
@@ -531,6 +595,22 @@ resource "upcloud_loadbalancer_frontend" "lb_frontend" {
   mode                 = "tcp"
   port                 = each.value.port
   default_backend_name = upcloud_loadbalancer_backend.lb_backend[each.key].name
+
+  dynamic "networks" {
+    for_each = var.loadbalancer_legacy_network ? [] : [1]
+
+    content {
+      name   = "Public-Net"
+    }
+  }
+
+  dynamic "networks" {
+    for_each = each.value.allow_internal_frontend ? [1] : []
+
+    content{
+      name = "Private-Net"
+    }
+  }
 }
 
 resource "upcloud_loadbalancer_static_backend_member" "lb_backend_member" {
@@ -554,5 +634,117 @@ resource "upcloud_server_group" "server_groups" {
   title                = each.key
   anti_affinity_policy = each.value.anti_affinity_policy
   labels               = {}
-  members              = [for server in each.value.servers : merge(upcloud_server.master, upcloud_server.worker)[server].id]
+  # Managed upstream via upcloud_server resource
+  members              = []
+  lifecycle {
+    ignore_changes = [members]
+  }
+}
+
+resource "upcloud_router" "router" {
+  count = var.router_enable ? 1 : 0
+
+  name = "${local.resource-prefix}router"
+
+  dynamic "static_route" {
+    for_each = var.static_routes
+
+    content {
+      name = static_route.key
+
+      nexthop = static_route.value["nexthop"]
+      route = static_route.value["route"]
+    }
+  }
+
+}
+
+resource "upcloud_gateway" "gateway" {
+  for_each = var.router_enable ? var.gateways : {}
+  name = "${local.resource-prefix}${each.key}-gateway"
+  zone = var.zone
+
+  features = each.value.features
+  plan = each.value.plan
+
+  router {
+    id = upcloud_router.router[0].id
+  }
+}
+
+resource "upcloud_gateway_connection" "gateway_connection" {
+  for_each = {
+    for gc in local.gateway_connections : "${gc.gateway_name}-${gc.connection_name}" => gc
+  }
+
+  gateway = each.value.gateway_id
+  name = "${local.resource-prefix}${each.key}-gateway-connection"
+  type = each.value.type
+
+  dynamic "local_route" {
+    for_each = each.value.local_routes
+
+    content {
+      name           = local_route.key
+      type           = local_route.value["type"]
+      static_network = local_route.value["static_network"]
+    }
+  }
+
+  dynamic "remote_route" {
+    for_each = each.value.remote_routes
+
+    content {
+      name           = remote_route.key
+      type           = remote_route.value["type"]
+      static_network = remote_route.value["static_network"]
+    }
+  }
+}
+
+resource "upcloud_gateway_connection_tunnel" "gateway_connection_tunnel" {
+  for_each = {
+    for gct in local.gateway_connection_tunnels : "${gct.gateway_name}-${gct.connection_name}-${gct.tunnel_name}-tunnel" => gct
+  }
+
+  connection_id = each.value.connection_id
+  name = each.key
+  local_address_name = each.value.local_address_name
+  remote_address = each.value.remote_address
+
+  ipsec_auth_psk {
+    psk = var.gateway_vpn_psks[each.key].psk
+  }
+
+  dynamic "ipsec_properties" {
+    for_each = each.value.ipsec_properties != null ? { "ip": each.value.ipsec_properties } : {}
+
+    content {
+        child_rekey_time = ipsec_properties.value["child_rekey_time"]
+        dpd_delay = ipsec_properties.value["dpd_delay"]
+        dpd_timeout = ipsec_properties.value["dpd_timeout"]
+        ike_lifetime = ipsec_properties.value["ike_lifetime"]
+        rekey_time = ipsec_properties.value["rekey_time"]
+        phase1_algorithms = ipsec_properties.value["phase1_algorithms"]
+        phase1_dh_group_numbers = ipsec_properties.value["phase1_dh_group_numbers"]
+        phase1_integrity_algorithms = ipsec_properties.value["phase1_integrity_algorithms"]
+        phase2_algorithms = ipsec_properties.value["phase2_algorithms"]
+        phase2_dh_group_numbers = ipsec_properties.value["phase2_dh_group_numbers"]
+        phase2_integrity_algorithms = ipsec_properties.value["phase2_integrity_algorithms"]
+    }
+  }
+}
+
+resource "upcloud_network_peering" "peering" {
+  for_each = var.network_peerings
+
+  name = "${local.resource-prefix}${each.key}"
+
+  network {
+    uuid = upcloud_network.private.id
+  }
+
+  peer_network {
+    uuid = each.value.remote_network
+  }
 }
